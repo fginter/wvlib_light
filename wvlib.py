@@ -107,13 +107,6 @@ class WV(object):
         wrd_vec_norm=self.w_to_normv(wrd)
         if wrd_vec_norm is None:
             return
-        sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants
+        sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants #cosine similarity to all other vecs
         #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
         return [(sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N)[-N-1:-1][::-1]]
-
-if __name__=="__main__":
-    wv=WV.load("pb34_wf_200_v2.bin",100000,2000000)
-    print wv.nearest(u"safka")
-        
-        
-    
