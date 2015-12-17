@@ -109,11 +109,11 @@ class WV(object):
             return
         sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants
         #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
-        return [(sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N)[-N-1:-1][::-1]]
+        return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N)[-N:]), reverse=True)[1:]
 
 if __name__=="__main__":
-    wv=WV.load("pb34_wf_200_v2.bin",100000,2000000)
-    print wv.nearest(u"safka")
+    wv=WV.load("pb34_wf_200_v2.bin",50000,200000)
+    print wv.nearest(u"ruoka")
         
         
     
