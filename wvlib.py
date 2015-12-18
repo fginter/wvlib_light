@@ -109,5 +109,21 @@ class WV(object):
             return
         sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants #cosine similarity to all other vecs
         #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
-        return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N)[-N:]), reverse=True)[1:]
+        return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
 
+    def analogy(self,src1,target1,src2,N=10):
+        """
+        src1 is to target1 as src2 is to ____
+        """
+        src1nv=self.w_to_normv(src1)
+        target1nv=self.w_to_normv(target1)
+        src2nv=self.w_to_normv(src2)
+        if None in (src1nv,target1nv,src2nv):
+            return None
+        target2=src2nv+target1nv-src1nv
+        target2/=numpy.linalg.norm(target2,ord=None)
+        sims=self.vectors.dot(target2)/self.norm_constants #cosine similarity to all other vecs
+        return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
+    
+        
+        
