@@ -1,5 +1,34 @@
 """
+
+#Load 10K vectors into memory and 500K vectors total
 wv=WV.load("somefile.bin",10000,500000)
+
+wv.max_rank_mem
+wv.max_rank
+
+#Normalized vector for "koira", gives None if word unknown
+wv.v_to_normv(u"koira")
+
+#Index of "koira"
+wv.w_to_dim(u"koira")
+
+#Do I have "koira"?
+u"koira" in wv.w_to_dim
+
+#7 nearest words as a list [(similarity,word),(similarity,word)]
+wv.nearest(u"koira",7)
+
+#The raw vectors in numpy array
+wv.vectors
+
+#List of words
+wv.words
+
+
+#Lengths of all vectors in the array (ie wv.max_rank_mem many of them)
+wv.norm_constants
+
+
 """
 
 import numpy
