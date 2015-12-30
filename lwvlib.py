@@ -1,18 +1,24 @@
 """
 
 #Load 10K vectors into memory and 500K vectors total
-wv=WV.load("somefile.bin",10000,500000)
+#both of the following work
+wv=lwvlib.load("somefile.bin",10000,500000)
+wv=lwvlib.WV.load("somefile.bin",10000,500000)
 
 wv.max_rank_mem
 wv.max_rank
 
 #Normalized vector for "koira", gives None if word unknown
-wv.v_to_normv(u"koira")
+wv.w_to_normv(u"koira")
 
 #Index of "koira"
+wv[u"koira"] #throws exception if koira not present
+wv.get(u"koira") #returns None if koira not present
 wv.w_to_dim(u"koira")
 
 #Do I have "koira"?
+u"koira" in wv
+wv.get(u"koira") is not None
 u"koira" in wv.w_to_dim
 
 #7 nearest words as a list [(similarity,word),(similarity,word)]
@@ -35,6 +41,12 @@ import numpy
 import mmap
 import os
 import StringIO
+
+
+#so we can write lwvlib.load(...)
+def load(*args,**kwargs):
+    return WV.load(*args,**kwargs)
+
 
 class WV(object):
 
@@ -120,6 +132,16 @@ class WV(object):
         #normalization constants for every row
         self.norm_constants=numpy.linalg.norm(x=self.vectors,ord=None,axis=1)#.reshape(self.max_rank,1) #Column vector of norms
 
+    def __contains__(self,wrd):
+        return wrd in self.w_to_dim
+
+    def get(self,wrd,default=None):
+        """Returns the vocabulary index of wrd or default"""
+        return self.w_to_dim.get(wrd,default)
+
+    def __getitem__(self,wrd):
+        return self.w_to_dim[wrd]
+        
     def w_to_normv(self,wrd):
         #Return a normalized vector for wrd if you can, None if you cannot
         wrd_dim=self.w_to_dim.get(wrd)
