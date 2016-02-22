@@ -162,6 +162,16 @@ class WV(object):
         #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
         return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
 
+    def similarity(self,w1,w2):
+        """
+        Return similarity of two words
+        """
+        w1_norm=self.w_to_normv(w1)
+        w2_norm=self.w_to_normv(w2)
+        if w1_norm is None or w2_norm is None:
+            return
+        return numpy.dot(w1_norm,w2_norm)
+
     def analogy(self,src1,target1,src2,N=10):
         """
         src1 is to target1 as src2 is to ____
