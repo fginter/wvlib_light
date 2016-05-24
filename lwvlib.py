@@ -1,3 +1,4 @@
+from __future__ import print_function
 """
 
 #Load 10K vectors into memory and 500K vectors total
@@ -40,7 +41,7 @@ wv.norm_constants
 import numpy
 import mmap
 import os
-import StringIO
+#import StringIO
 
 
 #so we can write lwvlib.load(...)
@@ -58,18 +59,18 @@ class WV(object):
         chars=[]
         while True:
             c = inp.read(1)
-            if c == ' ':
+            if c == b' ':
                 break
             if not c:
                 raise ValueError("preliminary end of file")
             chars.append(c)
-        wrd=''.join(chars).strip()
+        wrd=b''.join(chars).strip()
         try:
-            return unicode(wrd,"utf-8")
+            return wrd.decode("utf-8")
         except UnicodeDecodeError:
             #Not a utf-8, shoots, what now?
             #maybe I should warn here TODO
-            return unicode(wrd,"utf-8","replace")
+            return wrd.decode("utf-8","replace")
         
     
     @classmethod
@@ -102,7 +103,6 @@ class WV(object):
         words=[]
         #data: the vector matrix for the first max_rank vectors
         data=numpy.zeros((max_rank_mem,vsize),float_type)
-
         #Now read one word at a time, fill into the matrix
         for idx in range(max_rank_mem):
             words.append(cls.read_word(f))
@@ -185,6 +185,3 @@ class WV(object):
         target2/=numpy.linalg.norm(target2,ord=None)
         sims=self.vectors.dot(target2)/self.norm_constants #cosine similarity to all other vecs
         return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
-    
-        
-        
