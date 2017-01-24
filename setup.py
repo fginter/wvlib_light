@@ -1,6 +1,7 @@
+from __future__ import print_function
 from setuptools import setup, find_packages
 
-print find_packages(exclude=['contrib', 'docs', 'tests'],include=["../wvlib_light"])
+print(find_packages(exclude=['contrib', 'docs', 'tests'],include=["../wvlib_light"]))
 
 setup(
     name='wvlib_light',
