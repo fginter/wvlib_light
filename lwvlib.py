@@ -167,7 +167,13 @@ class WV(object):
             return
         sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants #cosine similarity to all other vecs
         #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
-        return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
+        nearest_n=sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True) #this should be n+1 long
+        if nearest_n[0][1]==wrd:
+            return nearest_n[1:]
+        else:
+            return nearest_n[:-1]
+
+        
 
     def similarity(self,w1,w2):
         """
