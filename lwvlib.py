@@ -44,6 +44,7 @@ txt2bin()
 
 """
 
+import traceback
 import numpy
 import mmap
 import os
@@ -213,6 +214,7 @@ def txt2bin(f_in,f_out,max=0):
         rows=max(rows,max)
     out.write("{} {}\n".format(rows,dims).encode("utf-8"))
     counter=0
+
     for line in inp:
         line=line.rstrip()
         line=line.lstrip(" ")
@@ -224,6 +226,7 @@ def txt2bin(f_in,f_out,max=0):
         if counter==rows:
             break
 
+            
     inp.close()
     out.close()
     
