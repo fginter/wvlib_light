@@ -35,6 +35,12 @@ wv.words
 #Lengths of all vectors in the array (ie wv.max_rank_mem many of them)
 wv.norm_constants
 
+# Module-level utility functions
+
+load()
+bin2txt()
+txt2bin()
+
 
 """
 
@@ -42,7 +48,7 @@ import numpy
 import mmap
 import os
 #import StringIO
-
+import struct
 
 #so we can write lwvlib.load(...)
 def load(*args,**kwargs):
@@ -185,3 +191,59 @@ class WV(object):
         target2/=numpy.linalg.norm(target2,ord=None)
         sims=self.vectors.dot(target2)/self.norm_constants #cosine similarity to all other vecs
         return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
+
+def txt2bin(f_in,f_out,max=0):
+    """
+    convert UDPipe's (and Mikolov's?) txt format to bin
+    `f_in` string or open file (will be closed)
+    `f_out` string or open file (will be closed)
+    """
+    if isinstance(f_in,str):
+        inp=open(f_in,"rt")
+    else:
+        inp=f_in
+    if isinstance(f_out,str):
+        out=open(f_out,"wb")
+    else:
+        out=f_out
+    sizes=inp.readline()
+    rows, dims=sizes.strip().split()
+    rows, dims=int(rows), int(dims)
+    if max>0:
+        rows=max(rows,max)
+    out.write("{} {}\n".format(rows,dims).encode("utf-8"))
+    counter=0
+    for line in inp:
+        line=line.rstrip()
+        line=line.lstrip(" ")
+        word,rest=line.split(" ",1)
+        out.write(word.encode("utf-8"))
+        out.write(" ".encode("utf-8"))
+        out.write(struct.pack("{}f".format(dims),*(float(w) for w in rest.split())))
+        counter+=1
+        if counter==rows:
+            break
+
+    inp.close()
+    out.close()
+    
+def bin2txt(f_in,f_out,max_num=0):
+    """
+    convert bin to UDPipe's (and Mikolov's?) txt format
+    `f_in` string with .bin file name
+    `f_out` string or open file (will be closed)
+    """
+    if max_num>0:
+        m=load(f_in,max_num,max_num)
+    else:
+        m=load(f_in)
+        
+    if isinstance(f_out,str):
+        out=open(f_out,"w")
+    else:
+        out=f_out
+
+    print("{} {}".format(*m.vectors.shape),file=out)
+    for w,row in zip(m.words,m.vectors):
+        print(w," ".join(("{:6f}".format(x) for x in row)),file=out)
+    out.close()
