@@ -199,6 +199,23 @@ class WV(object):
         sims=self.vectors.dot(target2)/self.norm_constants #cosine similarity to all other vecs
         return sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True)[1:]
 
+    def save(self,f_out):
+        #Careful, only saves what's loaded in mem
+        if isinstance(f_out,str):
+            out=open(f_out,"wb")
+        else:
+            out=f_out
+        out.write("{} {}\n".format(*self.vectors.shape).encode("utf-8"))
+        for idx in range(self.vectors.shape[0]):
+            out.write(self.words[idx].encode("utf-8"))
+            out.write(" ".encode("utf-8"))
+            self.vectors[idx].tofile(out,sep="")
+            out.write("\n".encode("utf-8"))
+        out.close()
+            
+            
+            
+    
 def txt2bin(f_in,f_out,max=0):
     """
     convert UDPipe's (and Mikolov's?) txt format to bin
