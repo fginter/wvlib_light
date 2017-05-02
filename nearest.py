@@ -14,6 +14,9 @@ if __name__=="__main__":
     while True:
         w=input("> ")
         nearest=[m.nearest(w,10) for m in models]
+        if any(n==None for n in nearest):
+            print("Out of vocab")
+            continue
         for nn in zip(*nearest):
             for sim,neighb in nn:
                 print("{:.2f} {:15s}".format(sim,neighb),"       ",end="")
