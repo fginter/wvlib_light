@@ -79,9 +79,60 @@ class WV(object):
             #maybe I should warn here TODO
             return wrd.decode("utf-8","replace")
         
-    
     @classmethod
-    def load(cls,file_name,max_rank_mem=None,max_rank=None,float_type=numpy.float32):
+    def load(cls,file_name,*args,format=None,**kwargs):
+        #which format?
+        if format==None:
+            #guess on suffix
+            if isinstance(file_name,str):
+                ext=os.path.splitext(file_name)[1]
+                if ext in (".txt",".vector",".vectors"):
+                    format="txt"
+                elif ext in (".bin",):
+                    format="bin"
+        if format=="txt":
+            return cls.load_txt(file_name,*args,**kwargs)
+        elif format=="bin" or format is None:
+            return cls.load_bin(file_name,*args,**kwargs)
+
+    @classmethod
+    def load_txt(cls,file_name,max_rank_mem=None,max_rank=None,float_type=numpy.float32):
+        """
+        Loads a w2v vectors file. 
+        `inp` an open file or a file name
+        `max_rank_mem` read up to this many vectors into an internal matrix, the rest is memory-mapped
+        `max_rank` read up to this many vectors, memory-mapping whatever above max_rank_mem
+        `float_type` the type of the vector matrix
+        """
+        f=open(file_name,"r")
+        try:
+            l=f.readline().strip()
+            wcount,vsize=l.split()
+            wcount,vsize=int(wcount),int(vsize)
+        except ValueError:
+            raise ValueError("Size line in the file is malformed: '%s'. Maybe this is not a w2v binary file?"%l)
+
+        if max_rank is None or max_rank>wcount:
+            max_rank=wcount
+
+        if max_rank_mem is None or max_rank_mem>max_rank:
+            max_rank_mem=max_rank
+
+        if max_rank_mem!=max_rank:
+            raise ValueError("max-rank-mem and max-rank must equal when reading the text format")
+
+        words=[]
+        data=numpy.zeros((max_rank_mem,vsize),float_type)
+        for idx in range(max_rank_mem):
+            line=f.readline().rstrip()
+            word,weights=line.split(" ",1)
+            words.append(word)
+            vec=numpy.fromstring(weights,numpy.float32,vsize,sep=" ")
+            data[idx,:]=vec
+        return cls(words,data,None,None)
+        
+    @classmethod
+    def load_bin(cls,file_name,max_rank_mem=None,max_rank=None,float_type=numpy.float32):
         """
         Loads a w2v bin file. 
         `inp` an open file or a file name
