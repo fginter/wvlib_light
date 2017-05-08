@@ -2,6 +2,8 @@ import lwvlib
 import argparse
 import numpy as np
 import sys
+import six
+assert six.PY3, "please run me with Python3"
 
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Move neighbor vectors')
@@ -21,19 +23,16 @@ if __name__=="__main__":
     
     pre=lwvlib.load(args.pre,args.max_pre,args.max_pre)
     post=lwvlib.load(args.post,args.max_pre,args.max_pre)
-    pre_vec=pre.vectors
-    post_vec=post.vectors
+    pre_vec=pre.vectors.astype(np.double)
+
+    post_vec=post.vectors.astype(np.double)
     assert len(pre_vec)>=len(post_vec)
-    post_vec=post_vec[:len(pre_vec)]
+    post_vec=post_vec[:len(pre_vec),]
     diff=post_vec-pre_vec
-
-    diff_mag=np.linalg.norm(diff,axis=1)
+    diff_mag=np.linalg.norm(diff,axis=1,ord=2)
     diff_mag/=max(diff_mag) #Magnitude of the difference, used as a scaling factor for its effect
-
-    
     tomove=lwvlib.load(args.tomove,args.max_tomove,args.max_tomove)
-    tomove_vec=tomove.vectors
-
+    tomove_vec=tomove.vectors.astype(np.double)
     tomove_words,vec_dim=tomove_vec.shape
     #Padding
     mb_size=args.mbsize
@@ -59,6 +58,9 @@ if __name__=="__main__":
         #So these are now my moves
         tomove_batched[batch]+=moves
         print("Batch",batch,"/",len(tomove_batched),file=sys.stderr,flush=True)
-    tomove.vectors=tomove_batched.reshape(len(tomove_batched)*mb_size,vec_dim)[:tomove_words]
-    tomove.save(args.out)
+    tomove.vectors=(tomove_batched.reshape(len(tomove_batched)*mb_size,vec_dim)[:tomove_words]).astype(np.float32)
+    if args.out.endswith(".vector") or args.out.endswith(".vectors"):
+        tomove.save_txt(args.out)
+    elif args.out.endswith(".bin"):
+        tomove.save_bin(args.out)
     
