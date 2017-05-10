@@ -5,6 +5,16 @@ import sys
 import six
 assert six.PY3, "please run me with Python3"
 
+
+def read_vocab(f):
+
+    word_counts={}
+    for line in f:
+        word,count=line.strip().split("\t")
+        assert word not in word_counts
+        word_counts[word]=int(count)
+    return word_counts
+
 if __name__=="__main__":
     parser = argparse.ArgumentParser(description='Move neighbor vectors')
     parser.add_argument('pre', metavar='binfile', help='Model in its original form')
@@ -14,19 +24,26 @@ if __name__=="__main__":
     parser.add_argument('--mbsize', type=int, default=1000, help='Minibatch size. Default: %(default)d')
     parser.add_argument('--max-pre', type=int, default=0, help='How many vectors to read for pre? 0 -> as many as possible. Default: %(default)d')
     parser.add_argument('--max-tomove', type=int, default=0, help='How many vectors to read for tomove? 0 -> as many as possible. Default: %(default)d')
+    parser.add_argument('--word-counts', type=str, default=None, help='List of pre/post words and their counts (one word per line, tab separated)')
+    parser.add_argument('--freq-threshold', type=int, default=5, help='Do not move the word if it appears more than x times during training. Default: %(default)d')
 
     args = parser.parse_args()
     if args.max_pre==0:
         args.max_pre=None
     if args.max_tomove==0:
         args.max_tomove=None
+
+    if args.word_counts!=None:
+        word_counts=read_vocab(open(args.word_counts,"rt",encoding="utf-8"))
+    else:
+        word_counts=None
     
     pre=lwvlib.load(args.pre,args.max_pre,args.max_pre)
     post=lwvlib.load(args.post,args.max_pre,args.max_pre)
     pre_vec=pre.vectors.astype(np.double)
 
     post_vec=post.vectors.astype(np.double)
-    assert len(pre_vec)>=len(post_vec)
+    assert len(pre_vec)>=len(post_vec)-1 # jmnybl
     post_vec=post_vec[:len(pre_vec),]
     diff=post_vec-pre_vec
     diff_mag=np.linalg.norm(diff,axis=1,ord=2)
@@ -59,6 +76,21 @@ if __name__=="__main__":
         tomove_batched[batch]+=moves
         print("Batch",batch,"/",len(tomove_batched),file=sys.stderr,flush=True)
     tomove.vectors=(tomove_batched.reshape(len(tomove_batched)*mb_size,vec_dim)[:tomove_words]).astype(np.float32)
+
+    # jmnybl
+    unknown_v=post.vectors[-1:,:]
+    print(unknown_v.shape,file=sys.stderr,flush=True)
+    print(tomove.vectors.shape,file=sys.stderr,flush=True)
+    tomove.vectors=np.concatenate((tomove.vectors,unknown_v),axis=0)
+    tomove.words.append("parsitounk")
+    
+    for idx,word in enumerate(tomove.words):
+        if post.get(word)!=None:
+            if word_counts!=None and word in word_counts and word_counts[word]<args.freq_threshold:
+                continue
+            tomove.vectors[idx,:]=post.vectors[post.get(word),:]
+
+
     if args.out.endswith(".vector") or args.out.endswith(".vectors"):
         tomove.save_txt(args.out)
     elif args.out.endswith(".bin"):
