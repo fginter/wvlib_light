@@ -50,6 +50,7 @@ import mmap
 import os
 #import StringIO
 import struct
+import sys
 
 #so we can write lwvlib.load(...)
 def load(*args,**kwargs):
@@ -104,9 +105,10 @@ class WV(object):
         `max_rank` read up to this many vectors, memory-mapping whatever above max_rank_mem
         `float_type` the type of the vector matrix
         """
-        f=open(file_name,"r")
+        ### Manually decoding utf-8 because sometimes we have unicode errors
+        f=open(file_name,"rb")
         try:
-            l=f.readline().strip()
+            l=f.readline().decode("utf-8").strip()
             wcount,vsize=l.split()
             wcount,vsize=int(wcount),int(vsize)
         except ValueError:
@@ -125,7 +127,26 @@ class WV(object):
         data=numpy.zeros((max_rank_mem,vsize),float_type)
         for idx in range(max_rank_mem):
             line=f.readline().rstrip()
-            word,weights=line.split(" ",1)
+            word,weights=line.split(b" ",1)
+            try:
+                word=word.decode("utf-8")
+            except UnicodeDecodeError:
+                #A broken word
+                broken=word
+                for goodchar_idx in range(len(broken)-1,-1,-1):
+                    try:
+                        word=broken[:goodchar_idx].decode("utf-8")
+                    except UnicodeDecodeError:
+                        continue
+                    #Success!
+                    #print("Fixing UTF8 error:",file=sys.stderr,flush=True)
+                    #sys.stderr.buffer.write(broken)
+                    #print("  ->",word,file=sys.stderr,flush=True)
+                    break
+                else:
+                    #Wow, couldn't fix
+                    word="utf8err{}".format(idx) #makes them unique
+            weights=weights.decode("utf-8")
             words.append(word)
             vec=numpy.fromstring(weights,numpy.float32,vsize,sep=" ")
             data[idx,:]=vec
