@@ -151,6 +151,7 @@ class WV(object):
             vec=numpy.fromstring(weights,numpy.float32,vsize,sep=" ")
             data[idx,:]=vec
         return cls(words,data,None,None)
+
         
     @classmethod
     def load_bin(cls,file_name,max_rank_mem=None,max_rank=None,float_type=numpy.float32):
@@ -233,19 +234,22 @@ class WV(object):
             vec/=numpy.linalg.norm(x=vec,ord=None)
             return vec
         
+    def nearest_to_normv(self,wrd_vec_norm,N=10):
+        sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants #cosine similarity to all other vecs
+        #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
+        nearest_n=sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True) #this should be n+1 long
+        return nearest_n
+
     def nearest(self,wrd,N=10):
         wrd_vec_norm=self.w_to_normv(wrd)
         if wrd_vec_norm is None:
             return
-        sims=self.vectors.dot(wrd_vec_norm)/self.norm_constants #cosine similarity to all other vecs
-        #http://stackoverflow.com/questions/6910641/how-to-get-indices-of-n-maximum-values-in-a-numpy-array
-        nearest_n=sorted(((sims[idx],self.words[idx]) for idx in numpy.argpartition(sims,-N-1)[-N-1:]), reverse=True) #this should be n+1 long
+        nearest_n=self.nearest_to_normv(wrd_vec_norm,N)
         if nearest_n[0][1]==wrd:
             return nearest_n[1:]
         else:
             return nearest_n[:-1]
 
-        
 
     def similarity(self,w1,w2):
         """
